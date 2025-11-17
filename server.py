@@ -78,56 +78,55 @@ def _extract_incoming(payload: Dict[str, Any]) -> Dict[str, Any]:
     Normaliza payloads de diferentes provedores (UAZ/Cloud API) para um formato comum.
     Retorna dict com: telefone, mensagem_texto, message_type, message_id, from_me (bool), audio_url (opcional).
     """
-    # 0) Estrutura UAZ Webhook (lista 'messages' com 'content')
+    # 0) Estrutura UAZ Webhook direta (payload tem 'message' direto)
     try:
-        messages_list = payload.get("messages")
-        if isinstance(messages_list, list) and messages_list:
-            m0 = messages_list[0] or {}
-            content = m0.get("content", {})
+        m0 = payload.get("message", {})
+        content = m0.get("content", {})
 
-            # telefone pode vir em 'sender' ou 'chatid' (ex.: "5585987520060@s.whatsapp.net")
-            telefone = m0.get("sender") or m0.get("chatid") or m0.get("from")
-            if isinstance(telefone, str):
-                # extrair apenas dígitos; remover sufixos como "@s.whatsapp.net"
-                import re
-                telefone = re.sub(r"\D", "", telefone.split("@")[0])
+        # telefone pode vir em 'sender' ou 'chatid' (ex.: "5585987520060@s.whatsapp.net")
+        telefone = m0.get("sender") or m0.get("chatid") or m0.get("from")
+        if isinstance(telefone, str):
+            # extrair apenas dígitos; remover sufixos como "@s.whatsapp.net"
+            import re
+            telefone = re.sub(r"\D", "", telefone.split("@")[0])
 
-            message_type = content.get("type") or m0.get("type") or m0.get("messageType") or "text"
+        message_type = content.get("type") or m0.get("type") or m0.get("messageType") or "text"
+        
+        # Verificação adicional: se wa_lastMessageType indicar áudio, usar isso
+        chat_data = payload.get("chat", {})
+        wa_last_type = chat_data.get("wa_lastMessageType")
+        if wa_last_type == "AudioMessage" and message_type == "media":
+            message_type = "audioMessage"
             
-            # Verificação adicional: se wa_lastMessageType indicar áudio, usar isso
-            chat_data = payload.get("chat", {})
-            wa_last_type = chat_data.get("wa_lastMessageType")
-            if wa_last_type == "AudioMessage" and message_type == "media":
-                message_type = "audioMessage"
-            mensagem_texto = content.get("text") or m0.get("text")
-            message_id = m0.get("messageid") or m0.get("id")
-            from_me = bool(m0.get("fromMe") or m0.get("wasSentByApi") or False)
+        mensagem_texto = content.get("text") or m0.get("text")
+        message_id = m0.get("messageid") or m0.get("id")
+        from_me = bool(m0.get("fromMe") or m0.get("wasSentByApi") or False)
+        
+        # Extrair URL de áudio - nova estrutura detectada
+        audio_url = None
+        if message_type in ["audio", "audioMessage", "ptt", "voice"]:
+            # Tentar diferentes campos para URL de áudio
+            audio_url = (
+                content.get("URL") or  # Nova estrutura: content.URL
+                content.get("url") or 
+                m0.get("url") or 
+                content.get("mediaUrl") or 
+                m0.get("mediaUrl")
+            )
             
-            # Extrair URL de áudio - nova estrutura detectada
-            audio_url = None
-            if message_type in ["audio", "audioMessage", "ptt", "voice"]:
-                # Tentar diferentes campos para URL de áudio
-                audio_url = (
-                    content.get("URL") or  # Nova estrutura: content.URL
-                    content.get("url") or 
-                    m0.get("url") or 
-                    content.get("mediaUrl") or 
-                    m0.get("mediaUrl")
-                )
-                
-                # Se não encontrar URL direta, usar o messageid como referência para download
-                if not audio_url and message_id:
-                    audio_url = message_id
+            # Se não encontrar URL direta, usar o messageid como referência para download
+            if not audio_url and message_id:
+                audio_url = message_id
 
-            if telefone:
-                return {
-                    "telefone": telefone,
-                    "mensagem_texto": mensagem_texto,
-                    "message_type": message_type,
-                    "message_id": message_id,
-                    "from_me": from_me,
-                    "audio_url": audio_url,
-                }
+        if telefone:
+            return {
+                "telefone": telefone,
+                "mensagem_texto": mensagem_texto,
+                "message_type": message_type,
+                "message_id": message_id,
+                "from_me": from_me,
+                "audio_url": audio_url,
+            }
     except Exception:
         pass
     # 1) Estrutura UAZ específica (body.message/chat/data/token)
