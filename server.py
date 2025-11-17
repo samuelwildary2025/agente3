@@ -659,6 +659,9 @@ def process_audio_message_async(telefone: str, audio_url: str, message_id: Optio
     Processa mensagem de áudio: transcreve e envia para o agente (execução assíncrona).
     Suporta tanto GET direto quanto POST com body (UAZ API).
     """
+    logger.info(f"🎤 [ASYNC] Iniciando processamento de áudio para {telefone}")
+    logger.info(f"🎤 [ASYNC] URL: {audio_url}, Método: {download_method}, Message ID: {message_id}")
+    logger.info(f"🎤 [ASYNC] Headers: {audio_headers}, Body: {download_body}")
     logger.info(f"Processando mensagem de áudio de {telefone} (método: {download_method})")
     
     try:
@@ -871,7 +874,8 @@ async def webhook_whatsapp(request: Request, background_tasks: BackgroundTasks):
         
         # Verificar se é mensagem de áudio
         if is_audio_message(message_type) and audio_url:
-            logger.info(f"Mensagem de áudio detectada de {telefone}")
+            logger.info(f"🎤 Mensagem de áudio detectada de {telefone}")
+            logger.info(f"🎤 Tipo: {message_type}, URL: {audio_url}, Message ID: {message_id}")
             
             # Extrair informações específicas da UAZ API
             audio_download_url = None
@@ -906,6 +910,9 @@ async def webhook_whatsapp(request: Request, background_tasks: BackgroundTasks):
                 audio_download_url = audio_url
             
             # Processar áudio em background
+            logger.info(f"🎤 Iniciando processamento de áudio em background para {telefone}")
+            logger.info(f"🎤 URL: {audio_download_url}, Método: {audio_method}, Headers: {audio_headers}")
+            
             background_tasks.add_task(
                 process_audio_message_async,
                 telefone,
@@ -915,6 +922,8 @@ async def webhook_whatsapp(request: Request, background_tasks: BackgroundTasks):
                 audio_method,
                 audio_body
             )
+            
+            logger.info(f"🎤 Áudio agendado para processamento em background")
             
             return JSONResponse(
                 status_code=200,
