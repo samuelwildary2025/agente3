@@ -19,7 +19,7 @@ import os
 from config.settings import settings
 from config.logger import setup_logger
 from tools.http_tools import estoque, pedidos, alterar, ean_lookup, estoque_preco
-from tools.redis_tools import set_pedido_ativo, confirme_pedido_ativo, verificar_pedido_expirado, renovar_pedido_timeout
+from tools.redis_tools import set_pedido_ativo, confirme_pedido_ativo
 from tools.time_tool import get_current_time, get_time_diff_description, format_timestamp
 from memory.limited_postgres_memory import LimitedPostgresChatMessageHistory
 
@@ -347,14 +347,7 @@ def run_agent_langgraph(telefone: str, mensagem: str) -> Dict[str, Any]:
     logger.info(f"Executando agente LangGraph REACT para telefone: {telefone}")
     logger.debug(f"Mensagem recebida: {mensagem}")
     
-    # Verificar se o pedido anterior expirou (timeout de 1 hora)
-    if verificar_pedido_expirado(telefone):
-        logger.info(f"Pedido expirado para {telefone} - cliente precisa reiniciar")
-        return {
-            "output": "⏰ Seu pedido anterior expirou após 1 hora de inatividade. Por favor, envie 'pedido' para iniciar um novo atendimento.",
-            "error": None,
-            "expired": True
-        }
+    # Removido verificação de expiração de pedido - sistema sem timeout
     
     try:
         agent = get_agent_graph()
@@ -379,9 +372,6 @@ def run_agent_langgraph(telefone: str, mensagem: str) -> Dict[str, Any]:
         
         logger.info("✅ Agente LangGraph REACT executado com sucesso")
         logger.debug(f"Resposta: {output}")
-        
-        # Renovar o timeout do pedido após interação bem-sucedida
-        renovar_pedido_timeout(telefone)
         
         return {"output": output, "error": None}
         
