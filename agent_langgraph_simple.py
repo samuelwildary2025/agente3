@@ -291,7 +291,9 @@ def _build_llm():
             _os.environ["ANTHROPIC_BASE_URL"] = _u
         from langchain_anthropic import ChatAnthropic
         return ChatAnthropic(model=model, temperature=temp, max_tokens=max_tokens)
-    return ChatOpenAI(model=model, openai_api_key=settings.openai_api_key, temperature=temp, max_tokens=max_tokens)
+    
+    # OpenAI: usar max_completion_tokens (novo padrão)
+    return ChatOpenAI(model=model, openai_api_key=settings.openai_api_key, temperature=temp, max_completion_tokens=max_tokens)
 
 def create_agent_with_history():
     """Cria o agente LangGraph com histórico usando create_react_agent"""

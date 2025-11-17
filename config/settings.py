@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     
     # OpenAI
     openai_api_key: str
-    llm_model: str = "gpt-5-mini"
+    llm_model: str = "gpt-4o-mini"
     llm_temperature: float = 0.0
     llm_provider: str = "openai"
     moonshot_api_key: Optional[str] = None
