@@ -97,10 +97,21 @@ def _extract_incoming(payload: Dict[str, Any]) -> Dict[str, Any]:
             message_id = m0.get("messageid") or m0.get("id")
             from_me = bool(m0.get("fromMe") or m0.get("wasSentByApi") or False)
             
-            # Extrair URL de áudio
+            # Extrair URL de áudio - nova estrutura detectada
             audio_url = None
             if message_type in ["audio", "audioMessage", "ptt", "voice"]:
-                audio_url = content.get("url") or m0.get("url") or content.get("mediaUrl") or m0.get("mediaUrl")
+                # Tentar diferentes campos para URL de áudio
+                audio_url = (
+                    content.get("URL") or  # Nova estrutura: content.URL
+                    content.get("url") or 
+                    m0.get("url") or 
+                    content.get("mediaUrl") or 
+                    m0.get("mediaUrl")
+                )
+                
+                # Se não encontrar URL direta, usar o messageid como referência para download
+                if not audio_url and message_id:
+                    audio_url = message_id
 
             if telefone:
                 return {
@@ -833,7 +844,10 @@ async def webhook_whatsapp(request: Request, background_tasks: BackgroundTasks):
         if isinstance(mensagem_texto, str):
             texto_preview = mensagem_texto[:120]
         elif mensagem_texto is None:
-            texto_preview = ""
+            if is_audio_message(message_type):
+                texto_preview = "[Áudio recebido - será processado]"
+            else:
+                texto_preview = ""
         else:
             texto_preview = str(mensagem_texto)[:120]
 
@@ -900,8 +914,8 @@ async def webhook_whatsapp(request: Request, background_tasks: BackgroundTasks):
                 }
             )
         
-        # Para mensagens de texto normais
-        if not mensagem_texto:
+        # Para mensagens de texto normais (ignorar se for áudio)
+        if not mensagem_texto and not is_audio_message(message_type):
             logger.error("Mensagem de texto não encontrada no payload")
             raise HTTPException(status_code=400, detail="Mensagem não encontrada")
 
