@@ -99,6 +99,11 @@ def _extract_incoming(payload: Dict[str, Any]) -> Dict[str, Any]:
             message_type = "audioMessage"
             
         mensagem_texto = content.get("text") or m0.get("text")
+        
+        # Para mensagens de áudio, definir um texto placeholder se não houver texto
+        if not mensagem_texto and message_type in ["audio", "audioMessage", "ptt", "voice"]:
+            mensagem_texto = "[Áudio recebido - aguardando transcrição]"
+            
         message_id = m0.get("messageid") or m0.get("id")
         from_me = bool(m0.get("fromMe") or m0.get("wasSentByApi") or False)
         
