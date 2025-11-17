@@ -92,7 +92,13 @@ def _extract_incoming(payload: Dict[str, Any]) -> Dict[str, Any]:
                 import re
                 telefone = re.sub(r"\D", "", telefone.split("@")[0])
 
-            message_type = content.get("type") or m0.get("type") or "text"
+            message_type = content.get("type") or m0.get("type") or m0.get("messageType") or "text"
+            
+            # Verificação adicional: se wa_lastMessageType indicar áudio, usar isso
+            chat_data = payload.get("chat", {})
+            wa_last_type = chat_data.get("wa_lastMessageType")
+            if wa_last_type == "AudioMessage" and message_type == "media":
+                message_type = "audioMessage"
             mensagem_texto = content.get("text") or m0.get("text")
             message_id = m0.get("messageid") or m0.get("id")
             from_me = bool(m0.get("fromMe") or m0.get("wasSentByApi") or False)
