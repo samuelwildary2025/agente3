@@ -100,8 +100,8 @@ def _extract_incoming(payload: Dict[str, Any]) -> Dict[str, Any]:
             
         mensagem_texto = content.get("text") or m0.get("text")
         
-        # Para mensagens de áudio, definir um texto placeholder se não houver texto
-        if not mensagem_texto and message_type in ["audio", "audioMessage", "ptt", "voice"]:
+        # Para mensagens de áudio, definir um texto placeholder se não houver texto ou se for vazio
+        if (not mensagem_texto or mensagem_texto.strip() == '') and message_type in ["audio", "audioMessage", "ptt", "voice"]:
             mensagem_texto = "[Áudio recebido - aguardando transcrição]"
             
         message_id = m0.get("messageid") or m0.get("id")
@@ -326,7 +326,7 @@ def _extract_incoming(payload: Dict[str, Any]) -> Dict[str, Any]:
                 mensagem_texto = img.get("caption") or "[Imagem recebida]"
             else:
                 mensagem_texto = "[Imagem recebida]"
-        elif message_type in ("audioMessage", "audio") and not mensagem_texto:
+        elif message_type in ("audioMessage", "audio") and (not mensagem_texto or mensagem_texto.strip() == ''):
             mensagem_texto = "[Mensagem de áudio recebida - transcrição não implementada]"
             # Extrair URL de áudio
             audio_data = message_any.get("audio", {})
