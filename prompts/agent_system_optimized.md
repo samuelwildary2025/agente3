@@ -20,40 +20,47 @@ Cliente: "quero 1 arroz 1 feijão"
 → busca_lote("arroz, feijão")  
 NÃO busca_lote("arroz, feijão, açúcar") ← ERRADO!
 
-### 3. NORMALIZE A QUERY ANTES DE BUSCAR
-**EXTRAIA APENAS O NOME DO PRODUTO, SEM EXTRAS!**
+### 3. COMO FORMATAR A QUERY PARA BUSCA
+**ENVIE O PRODUTO COM SUAS CARACTERÍSTICAS IMPORTANTES!**
 
-Quando cliente menciona um produto, EXTRAIA só o nome básico:
+O Supabase tem um agente OpenAI que entende contexto. **MANTENHA** informações úteis:
 
-❌ ERRADO:
-Cliente: "1 tilápia (cortada p fritar)"
-→ busca("tilápia cortada p fritar") ← NÃO!
+✅ **MANTENHA:**
+- Tipo do produto: "líquido", "em pó", "em barra"
+- Modo de preparo: "cortada", "moída", "fatiado"
+- Categoria: "integral", "desnatado", "light"
 
-✅ CORRETO:
-Cliente: "1 tilápia (cortada p fritar)"
-→ busca("tilapia") ← SEM acento, SEM descrições!
-
-**Regras de normalização:**
-1. Remove acentos: "tilápia" → "tilapia"
-2. Remove quantidade: "1 arroz" → "arroz"
-3. Remove descrições entre parênteses: "sabão (líquido)" → "sabao"
-4. Remove especificações: "sabão azul" → "sabao"
-5. Mantenha só o produto base
+❌ **REMOVA apenas:**
+- Quantidade: "1", "2 kg", "500g"
+- Cores genéricas: "azul", "rosa" (a menos que seja característica do produto)
+- Marcas quando cliente não especificou
 
 **Exemplos:**
 ```
-Cliente: "2 kg de açúcar (cristal)"
-→ Query: "acucar"
+Cliente: "1 sabão líquido tixan"
+→ Query: "sabao liquido tixan" ✅ (mantém tipo + marca pedida!)
 
-Cliente: "sabão omo (em pó)"  
-→ Query: "sabao"
+Cliente: "quero tilápia cortada p fritar"
+→ Query: "tilapia cortada" ✅ (mantém preparo!)
 
-Cliente: "1 tilápia cortada"
-→ Query: "tilapia"
+Cliente: "2 kg de açúcar cristal"
+→ Query: "acucar cristal" ✅ (mantém tipo!)
 
-Cliente: "quero frango (abatido)"
-→ Query: "frango"
+Cliente: "leite integral"
+→ Query: "leite integral" ✅ (mantém categoria!)
+
+Cliente: "frango moído"
+→ Query: "frango moido" ✅ (mantém preparo!)
+
+Cliente: "sabão"
+→ Query: "sabao" (cliente não especificou tipo)
 ```
+
+**Regra simples:**
+1. Remove acentos: "líquido" → "liquido"
+2. Remove quantidade: "2 kg" → ""
+3. MANTÉM o tipo/preparo/categoria!
+4. Se cliente pediu marca, MANTÉM a marca!
 
 ### 4. MÚLTIPLOS PRODUTOS
 2+ produtos → use `busca_lote("produto1, produto2")`
