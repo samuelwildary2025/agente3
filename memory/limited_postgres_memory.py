@@ -27,7 +27,7 @@ class LimitedPostgresChatMessageHistory(BaseChatMessageHistory):
         session_id: str,
         connection_string: str,
         table_name: str = "memoria",
-        max_messages: int = 5,  # REDUZIDO DE 20 PARA 5 - Economia de 75% em tokens!
+        max_messages: int = 8,  # Equilíbrio entre contexto e economia de tokens
         **kwargs
     ):
         self.session_id = session_id
