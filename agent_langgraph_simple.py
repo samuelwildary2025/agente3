@@ -242,7 +242,7 @@ def load_system_prompt() -> str:
         raise
 
 def _build_llm():
-    model = getattr(settings, "llm_model", "gemini-2.0-flash-lite")
+    model = getattr(settings, "llm_model", "gemini-2.5-flash-lite")
     temp = float(getattr(settings, "llm_temperature", 0.0))
     provider = getattr(settings, "llm_provider", "google")
     
@@ -341,10 +341,10 @@ def run_agent_langgraph(telefone: str, mensagem: str) -> Dict[str, Any]:
             # Cálculo de custo baseado no provider
             provider = getattr(settings, "llm_provider", "google")
             if provider == "google":
-                # Gemini 2.0 Flash-Lite pricing
-                # Input: $0.075 per 1M tokens | Output: $0.30 per 1M tokens
-                input_cost = (cb.prompt_tokens / 1_000_000) * 0.075
-                output_cost = (cb.completion_tokens / 1_000_000) * 0.30
+                # Gemini 2.5 Flash-Lite pricing (atualizado 12/2024)
+                # Input: $0.10 per 1M tokens | Output: $0.40 per 1M tokens
+                input_cost = (cb.prompt_tokens / 1_000_000) * 0.10
+                output_cost = (cb.completion_tokens / 1_000_000) * 0.40
             else:
                 # OpenAI gpt-4o-mini pricing
                 # Input: $0.15 per 1M tokens | Output: $0.60 per 1M tokens
