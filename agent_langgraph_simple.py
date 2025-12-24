@@ -406,8 +406,31 @@ def run_agent_langgraph(telefone: str, mensagem: str) -> Dict[str, Any]:
                 if last_ai:
                     logger.warning(f"⚠️ Última AIMessage rejeitada: content='{str(last_ai.content)[:200]}' tool_calls={getattr(last_ai, 'tool_calls', None)}")
             
-            output = "Desculpe, não consegui processar sua solicitação. Pode repetir?"
-            logger.warning("⚠️ Resposta vazia do LLM, usando fallback")
+            # FALLBACK INTELIGENTE: Analisa as mensagens de tool para gerar resposta útil
+            tool_results = []
+            for msg in result.get("messages", []):
+                if hasattr(msg, 'content') and isinstance(msg.content, str):
+                    content = msg.content
+                    # Detectar resposta de estoque vazio
+                    if "0 item" in content or "disponíveis após filtragem" in content or "[]" in content:
+                        tool_results.append("sem_estoque")
+                    # Detectar busca de EAN
+                    elif "EANS_ENCONTRADOS" in content:
+                        tool_results.append("ean_encontrado")
+                    # Detectar produto não encontrado
+                    elif "Nenhum produto encontrado" in content or "não encontrado" in content.lower():
+                        tool_results.append("nao_encontrado")
+            
+            # Gerar resposta baseada nos resultados das tools
+            if "sem_estoque" in tool_results:
+                output = "Não temos esse produto disponível no momento. Quer outro?"
+                logger.info("🔄 Fallback inteligente: produto sem estoque")
+            elif "nao_encontrado" in tool_results:
+                output = "Não achei esse produto. Pode descrever de outra forma?"
+                logger.info("🔄 Fallback inteligente: produto não encontrado")
+            else:
+                output = "Desculpe, não consegui processar sua solicitação. Pode repetir?"
+                logger.warning("⚠️ Resposta vazia do LLM, usando fallback genérico")
         
         logger.info("✅ Agente executado")
         logger.info(f"💬 RESPOSTA: {output[:200]}{'...' if len(output) > 200 else ''}")
