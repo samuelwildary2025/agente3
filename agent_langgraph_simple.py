@@ -420,7 +420,6 @@ def run_agent_langgraph(telefone: str, mensagem: str) -> Dict[str, Any]:
                     elif "EANS_ENCONTRADOS" in content:
                         tool_results.append("ean_encontrado")
                         # Extrair nomes dos produtos (formato: "1) EAN - NOME PRODUTO")
-                        import re
                         matches = re.findall(r'\d+\) \d+ - ([A-Z][^\n;]+)', content)
                         if matches:
                             produtos_encontrados.extend(matches[:3])  # Pegar até 3 produtos
